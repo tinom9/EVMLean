@@ -18,7 +18,7 @@ abbrev Block := Vector UInt8 136
 def rateBytes : Nat := 136
 def digestBytes : Nat := 32
 
-private def rotationOffsets : Vector Nat 25 := ⟨#[
+def rotationOffsets : Vector Nat 25 := ⟨#[
    0,  1, 62, 28, 27,
   36, 44,  6, 55, 20,
    3, 10, 43, 25, 39,
@@ -26,7 +26,7 @@ private def rotationOffsets : Vector Nat 25 := ⟨#[
   18,  2, 61, 56, 14
 ], by decide⟩
 
-private def roundConstants : Vector UInt64 24 := ⟨#[
+def roundConstants : Vector UInt64 24 := ⟨#[
   0x0000000000000001, 0x0000000000008082,
   0x800000000000808a, 0x8000000080008000,
   0x000000000000808b, 0x0000000080000001,
@@ -41,13 +41,13 @@ private def roundConstants : Vector UInt64 24 := ⟨#[
   0x0000000080000001, 0x8000000080008008
 ], by decide⟩
 
-private def laneIndex (x y : Nat) : Fin 25 :=
+def laneIndex (x y : Nat) : Fin 25 :=
   Fin.ofNat 25 (x + 5 * y)
 
-private def lane (state : State) (x y : Nat) : UInt64 :=
+def lane (state : State) (x y : Nat) : UInt64 :=
   state[laneIndex x y]
 
-private def rotateLeft (word : UInt64) (amount : Nat) : UInt64 :=
+def rotateLeft (word : UInt64) (amount : Nat) : UInt64 :=
   if amount = 0 then word
   else word.shiftLeft amount.toUInt64 ||| word.shiftRight (64 - amount).toUInt64
 
@@ -95,10 +95,10 @@ def permute (state : State) : State := Id.run do
     result := round result roundConstant
   return result
 
-private def blockAt (input : ByteArray) (offset : Nat) : Block :=
+def blockAt (input : ByteArray) (offset : Nat) : Block :=
   Vector.ofFn fun i => input[offset + i]!
 
-private def finalBlock (input : ByteArray) (offset : Nat) : Block :=
+def finalBlock (input : ByteArray) (offset : Nat) : Block :=
   let remaining := input.size - offset
   Vector.ofFn fun i =>
     if i < remaining then
@@ -112,14 +112,14 @@ private def finalBlock (input : ByteArray) (offset : Nat) : Block :=
     else
       0
 
-private def decodeLane (block : Block) (i : Nat) : UInt64 := Id.run do
+def decodeLane (block : Block) (i : Nat) : UInt64 := Id.run do
   let mut result : UInt64 := 0
   for j in [0:8] do
     result := result |||
       block[Fin.ofNat 136 (8 * i + j)].toUInt64.shiftLeft (8 * j).toUInt64
   return result
 
-private def absorbBlock (state : State) (block : Block) : State :=
+def absorbBlock (state : State) (block : Block) : State :=
   let mixed := Id.run do
     let mut result := state
     for i in [0:17] do
@@ -128,7 +128,7 @@ private def absorbBlock (state : State) (block : Block) : State :=
     return result
   permute mixed
 
-private def absorb (input : ByteArray) : State := Id.run do
+def absorb (input : ByteArray) : State := Id.run do
   let fullBlocks := input.size / rateBytes
   let mut state : State := Vector.replicate 25 0
   for i in [0:fullBlocks] do
@@ -136,7 +136,7 @@ private def absorb (input : ByteArray) : State := Id.run do
   state := absorbBlock state (finalBlock input (fullBlocks * rateBytes))
   return state
 
-private def encodeDigest (state : State) : ByteArray :=
+def encodeDigest (state : State) : ByteArray :=
   ByteArray.mk <| Array.ofFn fun i : Fin digestBytes =>
     let laneNumber := i.val / 8
     let byteNumber := i.val % 8
